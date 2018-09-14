@@ -80,8 +80,6 @@ for pathwayIdx = 1:length(treesUnique)
     % pathwayFluxDetails = getSubstrateProductInEcoliRxns(highFluxRxnKeggIDs, enzymesList, EColiKeggID);
     pathwayFluxDetails  = [];
     
-%     pathwayFluxDetails = calcFluxPerPathwayPerRxn(updatedModel, ecoliKeggID, selectedPaths{1}, selectedPathsFlux{1}, metsInpathListUnique{pathwayIdx}, enzymesList{1}, rxnCompoundList);
-%     pathwayFluxDetails = getSubstrateProductInRxns(pathwayFluxDetails, originalEColiKeggID);
     
     [selectedOperators, allProductsDetails, substrateIDs, prodIDsList, rxnIDList, stepsFBAResults, stepsFBAResultsPos_OneStep, stepsFBAResultsNeg_OneStep,...
         originalRxn_couplingList, allModelPos_OneStep, allModelNeg_OneStep, allModel_Combined, operatorsPerStepList,...
