@@ -1,6 +1,8 @@
 % running proximal
 % input:
 %   enzymesList: a list of EC numbers for which we want to run proximal
+%   biomassPos: the position of biomass in the metabolic model
+%   couplePercent, metsInpath, rxnKEGGIDList, scenarioFlag
 % output:
 %   mutantFluxValue: the result of running FBA after augmenting the model
 %   with the operators and related reactions
@@ -14,7 +16,7 @@ function [selectedOperators, allProductsDetails, substrateIDs, prodIDsList, rxnI
     stepsFBAResults, stepsFBAResultsPos_OneStep, stepsFBAResultsNeg_OneStep, originalRxn_couplingList,...
     allModelPos_OneStep, allModelNeg_OneStep, allModel_Combined,...
     operatorsPerStepList, cids, cidNames, unknownProdIDs, unknownFormulasList] = ...
-    runProximal_1(enzymesList, biomassPos, pathwayFluxDetails, couplePercent, metsInpath, rxnKEGGIDList, scenarioFlag)
+    runProximal_1(enzymesList, biomassPos, couplePercent, metsInpath, rxnKEGGIDList, scenarioFlag)
 
 global EColiKeggID
 global mainModel
@@ -54,7 +56,7 @@ save SelectedOperators selectedOperators operatorsMainAtom operatorsMainAtomPos
 [allProductsDetails, substrateIDs, prodIDsList, rxnIDList, stepsFBAResults, stepsFBAResultsPos_OneStep, stepsFBAResultsNeg_OneStep, ...
     originalRxn_couplingList, allModelPos_OneStep, allModelNeg_OneStep, allModel_Combined, operatorsPerStepList, selectedOperators,...
     cids, cidNames, unknownProdIDs, unknownFormulasList] = ...
-    applyOperatorsToModel('SelectedOperators.mat', biomassPos, pathwayFluxDetails, couplePercent, metsInpath, scenarioFlag);
+    applyOperatorsToModel('SelectedOperators.mat', biomassPos, couplePercent, metsInpath, scenarioFlag);
 % save SelectedOperators selectedOperators operatorsMainAtom operatorsMainAtomPos
 
 end
@@ -118,7 +120,6 @@ end
 % input:
 %   operatorsFileName: the name of the operators mat file
 %   biomassPos: the position of biomass in the model
-%   pathwayFluxDetails: a structure containing the reactions of pathways
 %   used to produce a target molecule, and the enzyme and flux value for
 %   each reaction
 % output:
@@ -137,7 +138,7 @@ end
 function [allProductsDetails, substrateIDs, prodIDsList, rxnIDList, stepsFBAResults, stepsFBAResultsPos_OneStep, stepsFBAResultsNeg_OneStep,...
     originalRxn_couplingList, allModelPos_OneStep, allModelNeg_OneStep, allModel_Combined, operatorsPerStepList, selectedOperators,...
     cids, cidNames, unknownProdIDs, unknownFormulasList]  = ...
-    applyOperatorsToModel(operatorsFileName, biomassPos, pathwayFluxDetails, couplePercent, metsInpath, scenarioFlag)
+    applyOperatorsToModel(operatorsFileName, biomassPos, couplePercent, metsInpath, scenarioFlag)
 
 load cofactors.mat
 
@@ -334,7 +335,7 @@ for compoundIdx = 1:length(compoundsToApplyOpsOn)
 %                     [updatedModel_PosRxn, updatedEColiKeggID, mainCouplingRxn_PosRxn] = coupleRxnFlux(updatedModel, originalEColiKeggID, prodEnzymesList{prodIdx-2,1},...
 %                         pathwayFluxDetails, updatedRxnIDList(end), couplePercent, 1); 
 %                     [updatedModel_PosRxn, updatedEColiKeggID, mainCouplingRxn_PosRxn] = restrictFluxOfAddedReaction(compound, updatedModel, originalEColiKeggID, updatedRxnIDList(end), couplePercent, 1, pathwayFluxDetails, prodEnzymesList{prodIdx-2,1});
-                    [updatedModel_PosRxn, updatedEColiKeggID, mainCouplingRxn_PosRxn, posBoundVal] = setBoundsForAddedRxn(updatedModel, originalEColiKeggID, updatedRxnIDList(end), couplePercent, 1, pathwayFluxDetails, prodEnzymesList{prodIdx-2,1}, selectedOperators(operatorsPathwayDetailsIdx));
+                    [updatedModel_PosRxn, updatedEColiKeggID, mainCouplingRxn_PosRxn, posBoundVal] = setBoundsForAddedRxn(updatedModel, originalEColiKeggID, updatedRxnIDList(end), couplePercent, 1, prodEnzymesList{prodIdx-2,1}, selectedOperators(operatorsPathwayDetailsIdx));
                     mutantPosFluxValue = optimizeCbModel(updatedModel_PosRxn, 'max', false, false);
 
                     % couple the reaction so the flux would be in the
@@ -343,7 +344,7 @@ for compoundIdx = 1:length(compoundsToApplyOpsOn)
 %                         pathwayFluxDetails, updatedRxnIDList(end), couplePercent, -1);
 
 %                     [updatedModel_NegRxn, updatedEColiKeggID, mainCouplingRxn_NegRxn] = restrictFluxOfAddedReaction(compound, updatedModel, originalEColiKeggID, updatedRxnIDList(end), couplePercent, -1, pathwayFluxDetails, prodEnzymesList{prodIdx-2,1});
-                    [updatedModel_NegRxn, updatedEColiKeggID, mainCouplingRxn_NegRxn, negBoundVal] = setBoundsForAddedRxn(updatedModel, originalEColiKeggID, updatedRxnIDList(end), couplePercent, -1, pathwayFluxDetails, prodEnzymesList{prodIdx-2,1}, selectedOperators(operatorsPathwayDetailsIdx));
+                    [updatedModel_NegRxn, updatedEColiKeggID, mainCouplingRxn_NegRxn, negBoundVal] = setBoundsForAddedRxn(updatedModel, originalEColiKeggID, updatedRxnIDList(end), couplePercent, -1, prodEnzymesList{prodIdx-2,1}, selectedOperators(operatorsPathwayDetailsIdx));
                     mutantNegFluxValue = optimizeCbModel(updatedModel_NegRxn, 'max', false, false);
 
 
@@ -378,7 +379,7 @@ for compoundIdx = 1:length(compoundsToApplyOpsOn)
                         allModelNeg_OneStep = [allModelNeg_OneStep; updatedModel_NegRxn];
 
 %                         [mainModel, EColiKeggID, mainCouplingRx] = restrictFluxOfAddedReaction(compound, mainModel, EColiKeggID, rxnIDList(end), couplePercent, coupleDirection, pathwayFluxDetails, prodEnzymesList{prodIdx-2,1});
-                        [mainModel, EColiKeggID, mainCouplingRx] = setBoundsForAddedRxn_FinalModel(mainModel, EColiKeggID, rxnIDList(end), coupleDirection, pathwayFluxDetails, prodEnzymesList{prodIdx-2,1}, boundVal, selectedOperators(operatorsPathwayDetailsIdx));
+                        [mainModel, EColiKeggID, mainCouplingRx] = setBoundsForAddedRxn_FinalModel(mainModel, EColiKeggID, rxnIDList(end), coupleDirection, prodEnzymesList{prodIdx-2,1}, boundVal, selectedOperators(operatorsPathwayDetailsIdx));
                     
 %                         [mainModel, EColiKeggID, mainCouplingRxn] = coupleRxnFlux(mainModel, EColiKeggID,...
 %                             prodEnzymesList{prodIdx-2,1}, pathwayFluxDetails, rxnIDList(end), couplePercent, coupleDirection); 
@@ -422,7 +423,7 @@ for compoundIdx = 1:length(compoundsToApplyOpsOn)
 %                         [updatedModel_PosRxn, updatedEColiKeggID, mainCouplingRxn_PosRxn] = coupleRxnFlux(updatedModel, originalEColiKeggID, prodEnzymesList{prodIdx-2,1},...
 %                                             pathwayFluxDetails, updatedRxnIDList(end), couplePercent, 1);
 %                         [updatedModel_PosRxn, updatedEColiKeggID, mainCouplingRxn_PosRxn] = restrictFluxOfAddedReaction(compound, updatedModel, originalEColiKeggID, updatedRxnIDList(end), couplePercent, 1, pathwayFluxDetails, prodEnzymesList{prodIdx-2,1});
-                        [updatedModel_PosRxn, updatedEColiKeggID, mainCouplingRxn_PosRxn, posBoundVal] = setBoundsForAddedRxn(updatedModel, originalEColiKeggID, updatedRxnIDList(end), couplePercent, 1, pathwayFluxDetails, prodEnzymesList{prodIdx-2,1}, selectedOperators(operatorsPathwayDetailsIdx));
+                        [updatedModel_PosRxn, updatedEColiKeggID, mainCouplingRxn_PosRxn, posBoundVal] = setBoundsForAddedRxn(updatedModel, originalEColiKeggID, updatedRxnIDList(end), couplePercent, 1, prodEnzymesList{prodIdx-2,1}, selectedOperators(operatorsPathwayDetailsIdx));
                         mutantPosFluxValue = optimizeCbModel(updatedModel_PosRxn, 'max', false, false);
 
                         % couple the reaction so the flux would be in the
@@ -431,7 +432,7 @@ for compoundIdx = 1:length(compoundsToApplyOpsOn)
 %                                             pathwayFluxDetails, updatedRxnIDList(end), couplePercent, -1);
 
 %                         [updatedModel_NegRxn, updatedEColiKeggID, mainCouplingRxn_NegRxn] = restrictFluxOfAddedReaction(compound, updatedModel, originalEColiKeggID, updatedRxnIDList(end), couplePercent, -1, pathwayFluxDetails, prodEnzymesList{prodIdx-2,1});
-                        [updatedModel_NegRxn, updatedEColiKeggID, mainCouplingRxn_NegRxn, negBoundVal] = setBoundsForAddedRxn(updatedModel, originalEColiKeggID, updatedRxnIDList(end), couplePercent, -1, pathwayFluxDetails, prodEnzymesList{prodIdx-2,1}, selectedOperators(operatorsPathwayDetailsIdx));
+                        [updatedModel_NegRxn, updatedEColiKeggID, mainCouplingRxn_NegRxn, negBoundVal] = setBoundsForAddedRxn(updatedModel, originalEColiKeggID, updatedRxnIDList(end), couplePercent, -1, prodEnzymesList{prodIdx-2,1}, selectedOperators(operatorsPathwayDetailsIdx));
                         mutantNegFluxValue = optimizeCbModel(updatedModel_NegRxn, 'max', false, false);
 
 
@@ -469,7 +470,7 @@ for compoundIdx = 1:length(compoundsToApplyOpsOn)
                             allModelNeg_OneStep = [allModelNeg_OneStep; updatedModel_NegRxn];
                             
 %                             [mainModel, EColiKeggID, mainCouplingRx] = restrictFluxOfAddedReaction(compound, mainModel, EColiKeggID, rxnIDList(end), couplePercent, coupleDirection, pathwayFluxDetails, prodEnzymesList{prodIdx-2,1});
-                            [mainModel, EColiKeggID, mainCouplingRx] = setBoundsForAddedRxn_FinalModel(mainModel, EColiKeggID, rxnIDList(end), coupleDirection, pathwayFluxDetails, prodEnzymesList{prodIdx-2,1}, boundVal, selectedOperators(operatorsPathwayDetailsIdx));
+                            [mainModel, EColiKeggID, mainCouplingRx] = setBoundsForAddedRxn_FinalModel(mainModel, EColiKeggID, rxnIDList(end), coupleDirection, prodEnzymesList{prodIdx-2,1}, boundVal, selectedOperators(operatorsPathwayDetailsIdx));
                             
 %                             [mainModel, EColiKeggID, mainCouplingRxn] = coupleRxnFlux(mainModel, EColiKeggID,...
 %                                 prodEnzymesList{prodIdx-2,1}, pathwayFluxDetails, rxnIDList(end), currentCouplePercent, coupleDirection); 

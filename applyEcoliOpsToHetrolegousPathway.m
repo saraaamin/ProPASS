@@ -78,14 +78,15 @@ for pathwayIdx = 1:length(treesUnique)
     % test case since the one returned by the funtion is too general and not
     % recognized in the operators list
     % pathwayFluxDetails = getSubstrateProductInEcoliRxns(highFluxRxnKeggIDs, enzymesList, EColiKeggID);
-    pathwayFluxDetails  = [];
+
     
-    
+    % This is the function used to call PROXIMAL and all related functions
     [selectedOperators, allProductsDetails, substrateIDs, prodIDsList, rxnIDList, stepsFBAResults, stepsFBAResultsPos_OneStep, stepsFBAResultsNeg_OneStep,...
         originalRxn_couplingList, allModelPos_OneStep, allModelNeg_OneStep, allModel_Combined, operatorsPerStepList,...
         cids, cidNames, unknownProdIDs, unknownFormulasList] =...
-        runProximal_1(enzymesList, biomassPos, pathwayFluxDetails, couplePercent, metsInpathListUnique{pathwayIdx}, modelRxnIDList, scenarioFlag);
+        runProximal_1(enzymesList, biomassPos, couplePercent, metsInpathListUnique{pathwayIdx}, modelRxnIDList, scenarioFlag);
     EColiKeggID_WithOperators{pathwayIdx, 1} = EColiKeggID;
+    
     mutantFlux = optimizeCbModel(mainModel, 'max', false, false);
 
     [equationsList, equationsIDList, formulasList, mainModel] = writeChemicalEqs(allModel_Combined, EColiKeggID, rxnIDList, cids, cidNames);
